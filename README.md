@@ -1,6 +1,9 @@
 # Haveri játékok
 
-Közös játékoldal haverokkal, belépés nélkül: **Aknakereső** (közös tábla), **Passziánsz-verseny** (ugyanaz a leosztás mindenkinek), **Barkóba**, **Amőba**, **Akasztófa**, csevegővel.
+Közös játékoldal haverokkal, belépés nélkül, csevegővel. 14 játék:
+Ország-város (gépi javítással), Rajzolós, Kvíz, Aknakereső, Passziánsz-verseny, Barkóba, Amőba, Akasztófa, Négy a sorban, Torpedó, Memória, Kockapóker, Kő-papír-olló, Reakcióidő.
+
+Az Ország-város javítását a Netlify-on futó `/api/judge` végzi: Renderen állítsd be a `JUDGE_URL` és `JUDGE_KEY` környezeti változókat (a kulcs ugyanaz, mint a Netlify `JUDGE_KEY` változója). Nélkülük a gazda kézzel javít.
 
 ## Futtatás
 

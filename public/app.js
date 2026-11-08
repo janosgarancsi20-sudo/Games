@@ -1,7 +1,9 @@
 import { mines, amoba, hangman, barkoba } from "./games.js";
 import { solitaire } from "./solitaire.js";
+import { orszag } from "./orszag.js";
+import { draw, quiz, four, battle, memory, dice, rps, react } from "./more.js";
 
-const VIEWS = { mines, amoba, hangman, barkoba, solitaire };
+const VIEWS = { mines, amoba, hangman, barkoba, solitaire, orszag, draw, quiz, four, battle, memory, dice, rps, react };
 const $ = (s, r = document) => r.querySelector(s);
 const app = $("#app");
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -48,6 +50,9 @@ export function avatar(id, sm) {
 const isHost = () => S.st && S.st.host === S.pid;
 
 const CATALOG = [
+  { id: "orszag", ic: "Ö", bg: "var(--sun)", fg: "var(--sun-ink)", title: "Ország-város", desc: "A klasszikus: betűsorsolás, STOP, és a végén a gép (Claude) kijavít és pontoz. Ugyanaz, mint a külön oldal." },
+  { id: "draw", ic: "✎", bg: "#8b5cf6", title: "Rajzolós", desc: "Egyvalaki rajzol, a többiek tippelik, mi az. Aki gyorsabban kitalálja, több pontot kap." },
+  { id: "quiz", ic: "!", bg: "var(--info)", title: "Kvíz", desc: "Általános műveltség, 4 válaszlehetőség. A gyorsabb helyes válasz több pontot ér.", opts: [[5, "5 kérdés"], [10, "10"], [15, "15"]], key: "n" },
   { id: "mines", ic: "✹", bg: "var(--bad)", title: "Aknakereső", desc: "Közös tábla. Mindenki nyithat, a pont a felnyitott mezőkért jár. Aki aknára lép, mindenkinek vége.",
     opts: [["kicsi", "Kicsi"], ["kozepes", "Közepes"], ["nagy", "Nagy"]], key: "size" },
   { id: "solitaire", ic: "♠", bg: "var(--info)", title: "Passziánsz-verseny", desc: "Mindenki ugyanazt a leosztást kapja. Az nyer, aki elsőként rakja fel mind az 52 lapot.",
@@ -55,6 +60,12 @@ const CATALOG = [
   { id: "barkoba", ic: "?", bg: "var(--sun)", fg: "var(--sun-ink)", title: "Barkóba", desc: "Te gondolsz valamire, a többiek igen/nem kérdésekkel találják ki. Legfeljebb 20 kérdés." },
   { id: "amoba", ic: "✕", bg: "var(--accent)", title: "Amőba", desc: "Ketten játszotok egy 15×15-ös táblán, öt egy sorban nyer. A többiek nézik." },
   { id: "hangman", ic: "A", bg: "var(--ok)", title: "Akasztófa", desc: "Te adod fel a szót, a többiek együtt tippelnek betűket. 10 hiba után vége." },
+  { id: "four", ic: "●", bg: "#e2334f", title: "Négy a sorban", desc: "Ketten dobáltok korongot egy 7×6-os táblára. Négy egy sorban nyer." },
+  { id: "battle", ic: "⚓", bg: "#0e9fb3", title: "Torpedó", desc: "Két kapitány, rejtett flották egy 8×8-as vízen. Aki talál, újra lőhet." },
+  { id: "memory", ic: "▦", bg: "#d63384", title: "Memória", desc: "Párkereső sorban egymás után. Ha párt találsz, újra jössz.", opts: [[8, "8 pár"], [10, "10 pár"], [12, "12 pár"]], key: "pairs" },
+  { id: "dice", ic: "⚄", bg: "#b8860b", title: "Kockapóker", desc: "5 kocka, 3 dobás, 13 sor a lapon: full, sor, póker… A végén a legtöbb pont nyer." },
+  { id: "rps", ic: "✊", bg: "#c2410c", title: "Kő-papír-olló", desc: "Mindenki egyszerre választ. Minden legyőzött ellenfél 1 pont." },
+  { id: "react", ic: "⚡", bg: "var(--ok)", title: "Reakcióidő", desc: "Amikor zöldre vált, nyomd! 5 kör, a legkisebb átlag nyer. Ne nyomd korán!" },
 ];
 
 // ---------- megjelenítés ----------
@@ -85,7 +96,7 @@ function renderHome() {
     <div class="hero">
       <div class="tiles" aria-hidden="true"><span class="tile">✹</span><span class="tile">♠</span><span class="tile">?</span><span class="tile">✕</span></div>
       <h1>Haveri játékok</h1>
-      <p>Aknakereső, passziánsz, barkóba, amőba és akasztófa. Egy szoba, egy link, és mindenki a saját telefonjáról játszik.</p>
+      <p>14 játék: Ország-város, rajzolós, kvíz, aknakereső, passziánsz, barkóba, amőba, torpedó és még több. Egy szoba, egy link, mindenki a saját telefonjáról.</p>
     </div>
     <div id="conn"></div>
     <div class="card stack">

@@ -23,6 +23,7 @@ function newCode() {
 function makeRoom(pid) {
   const code = newCode();
   const room = { code, host: pid, players: {}, chat: [], game: null, socks: new Map(), touched: Date.now(), seq: 0 };
+  room.push = () => broadcast(room); // aszinkron játékesemények (pl. javítás) után
   rooms.set(code, room);
   return room;
 }
@@ -130,7 +131,7 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(f).pipe(res);
 });
 
-const wss = new WebSocketServer({ server, path: "/ws", maxPayload: 16 * 1024 });
+const wss = new WebSocketServer({ server, path: "/ws", maxPayload: 64 * 1024 });
 wss.on("connection", (ws) => {
   ws.alive = true;
   ws.on("pong", () => (ws.alive = true));
@@ -143,6 +144,16 @@ wss.on("connection", (ws) => {
   });
   ws.on("close", () => detach(ws));
 });
+// időzített játékesemények (lejáró idő, következő kérdés, stb.)
+setInterval(() => {
+  const t = Date.now();
+  for (const room of rooms.values()) {
+    const g = room.game; if (!g || !room.socks.size) continue;
+    const G = GAMES[g.type]; if (!G.tick) continue;
+    try { if (G.tick(g.st, t, room)) broadcast(room); } catch (e) { console.error("tick", e); }
+  }
+}, 250);
+
 setInterval(() => {
   for (const ws of wss.clients) { if (!ws.alive) { ws.terminate(); continue; } ws.alive = false; ws.ping(); }
   const now = Date.now();

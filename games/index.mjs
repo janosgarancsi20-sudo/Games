@@ -180,4 +180,5 @@ const hangman = {
   },
 };
 
-export const GAMES = { mines, solitaire, barkoba, amoba, hangman };
+import { MORE } from "./more.mjs";
+export const GAMES = { mines, solitaire, barkoba, amoba, hangman, ...MORE };
