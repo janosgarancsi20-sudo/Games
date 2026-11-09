@@ -147,7 +147,7 @@ const amoba = {
 export const HU_LETTERS = "AÁBCDEÉFGHIÍJKLMNOÓÖŐPQRSTUÚÜŰVWXYZ".split("");
 const hangman = {
   id: "hangman", name: "Akasztófa", min: 2,
-  create(room, opts, pid) { return { setter: pid, word: "", hint: "", phase: "setup", tried: [], wrong: 0, max: 10, by: {}, winner: null, solver: null }; },
+  create(room, opts, pid) { const bot = opts.bot ? Object.keys(room.players).find((p) => room.players[p].bot) : null; return { setter: bot || pid, word: "", hint: "", phase: "setup", tried: [], wrong: 0, max: 10, by: {}, winner: null, solver: null }; },
   act(s, pid, m) {
     if (m.a === "word") {
       if (pid !== s.setter || s.phase !== "setup") err("Most nem adhatod meg.");

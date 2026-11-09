@@ -7,6 +7,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
 import { GAMES } from "./games/index.mjs";
+import { botStep, BOT_NAMES, BOT_GAMES } from "./games/bots.mjs";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUB = path.join(ROOT, "public");
@@ -27,14 +28,26 @@ function makeRoom(pid) {
   rooms.set(code, room);
   return room;
 }
+const LEVEL_HU = { easy: "könnyű", medium: "közepes", hard: "nehéz" };
+function addBot(room, level) {
+  const bots = Object.values(room.players).filter((p) => p.bot);
+  if (bots.length >= 8) throw new Error("Legfeljebb 8 gép lehet egy szobában.");
+  const used = new Set(Object.values(room.players).map((p) => p.name));
+  const name = BOT_NAMES.find((n) => !used.has(n + " 🤖")) || "Gép " + (bots.length + 1);
+  const pid = "bot" + crypto.randomBytes(5).toString("hex");
+  room.players[pid] = { name: name + " 🤖", joined: Date.now(), bot: { level: LEVEL_HU[level] ? level : "medium" } };
+  sys(room, `${room.players[pid].name} beszállt (${LEVEL_HU[room.players[pid].bot.level]}).`);
+  return pid;
+}
 function sys(room, text) { room.chat.push({ id: ++room.seq, sys: true, text, at: Date.now() }); room.chat = room.chat.slice(-60); }
 
 function viewFor(room, pid) {
   const g = room.game;
   return {
     t: "state", code: room.code, host: room.host, me: pid,
-    players: Object.fromEntries(Object.entries(room.players).map(([id, p]) => [id, { name: p.name, online: room.socks.has(id) && room.socks.get(id).size > 0, joined: p.joined }])),
+    players: Object.fromEntries(Object.entries(room.players).map(([id, p]) => [id, { name: p.name, online: (room.socks.has(id) && room.socks.get(id).size > 0) || !!p.bot, bot: p.bot ? p.bot.level : null, joined: p.joined }])),
     chat: room.chat,
+    botGames: BOT_GAMES,
     game: g ? { type: g.type, name: GAMES[g.type].name, by: g.by, startedAt: g.startedAt, v: GAMES[g.type].view(g.st, pid, room) } : null,
     now: Date.now(),
   };
@@ -93,13 +106,32 @@ function handle(ws, m) {
     room.chat.push({ id: ++room.seq, pid, text, at: Date.now() }); room.chat = room.chat.slice(-60);
     return broadcast(room);
   }
+  if (m.t === "addbot") {
+    try { addBot(room, m.level); } catch (e) { return send(ws, { t: "err", msg: e.message }); }
+    return broadcast(room);
+  }
+  if (m.t === "rmbot") {
+    const p = room.players[m.pid]; if (!p || !p.bot) return;
+    const g = room.game;
+    if (g && g.st.seats) for (const k of [1, 2]) if (g.st.seats[k] === m.pid) g.st.seats[k] = null;
+    sys(room, `${p.name} kiszállt.`); delete room.players[m.pid]; return broadcast(room);
+  }
+  if (m.t === "botsit") {
+    const g = room.game; if (!g || !g.st.seats) return;
+    const k = m.seat === 2 ? 2 : 1; if (g.st.seats[k]) return;
+    let bot = Object.keys(room.players).find((p) => room.players[p].bot && g.st.seats[1] !== p && g.st.seats[2] !== p);
+    try { if (!bot) bot = addBot(room, m.level || "medium"); } catch (e) { return send(ws, { t: "err", msg: e.message }); }
+    try { GAMES[g.type].act(g.st, bot, { a: "sit", seat: k }, room); } catch {}
+    return broadcast(room);
+  }
   if (m.t === "rename") { const n = clean(m.name, 20); if (n) { room.players[pid].name = n; broadcast(room); } return; }
   if (m.t === "start") {
     const G = GAMES[m.game]; if (!G) return send(ws, { t: "err", msg: "Ismeretlen játék." });
     const curOver = room.game && GAMES[room.game.type].over && GAMES[room.game.type].over(room.game.st);
     if (room.game && !curOver && room.host !== pid && room.game.by !== pid) return send(ws, { t: "err", msg: "Már megy egy játék. A gazda vagy az indító zárhatja le." });
-    const online = [...room.socks.keys()].length;
+    const online = Object.keys(room.players).filter((p) => room.socks.has(p) || room.players[p].bot).length;
     if (online < G.min) return send(ws, { t: "err", msg: `Ehhez legalább ${G.min} játékos kell.` });
+    if (m.game === "hangman" && m.opts && m.opts.bot && !Object.values(room.players).some((p) => p.bot)) { try { addBot(room, "medium"); } catch {} }
     try { room.game = { type: G.id, by: pid, startedAt: Date.now(), st: G.create(room, m.opts || {}, pid) }; }
     catch (e) { return send(ws, { t: "err", msg: e.message }); }
     sys(room, `${room.players[pid].name} elindította: ${G.name}.`);
@@ -149,8 +181,11 @@ setInterval(() => {
   const t = Date.now();
   for (const room of rooms.values()) {
     const g = room.game; if (!g || !room.socks.size) continue;
-    const G = GAMES[g.type]; if (!G.tick) continue;
-    try { if (G.tick(g.st, t, room)) broadcast(room); } catch (e) { console.error("tick", e); }
+    const G = GAMES[g.type];
+    let ch = false;
+    try { if (G.tick && G.tick(g.st, t, room)) ch = true; } catch (e) { console.error("tick", e); }
+    try { if (botStep(room, t)) ch = true; } catch (e) { console.error("bots", e); }
+    if (ch) broadcast(room);
   }
 }, 250);
 

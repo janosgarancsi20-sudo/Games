@@ -106,7 +106,7 @@ export const orszag = {
     const rounds = {};
     Object.entries(s.rounds).forEach(([k, r]) => { rounds[k] = +k === s.round ? r : { n: r.n, letter: r.letter, final: r.final, points: r.points }; });
     const g = { owner: s.owner, ctrl: ctrl(s, pid, room), status: s.status, round: s.round, letter: s.letter, cats: s.cats, mode: s.mode, strict: s.strict, merge: s.merge, time: s.time,
-      startAt: s.startAt, endsAt: s.endsAt, stopAt: s.stopAt, stopBy: s.stopBy, base: s.base, rounds, players: room.players };
+      startAt: s.startAt, endsAt: s.endsAt, stopAt: s.stopAt, stopBy: s.stopBy, base: s.base, rounds, players: Object.fromEntries(Object.entries(room.players).map(([k, p]) => [k, { name: p.name }])) };
     const out = { g, totals: totals(g) };
     const ans = s.ans[s.round] || {};
     if (s.status === "playing") { out.filled = Object.fromEntries(Object.values(ans).map((x) => [x.pid, Object.keys(x.a).length])); out.mine = ans[pid] ? ans[pid].a : null; }

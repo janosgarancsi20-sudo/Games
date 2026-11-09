@@ -59,7 +59,7 @@ const CATALOG = [
     opts: [[1, "1 lapos húzás"], [3, "3 lapos"]], key: "draw" },
   { id: "barkoba", ic: "?", bg: "var(--sun)", fg: "var(--sun-ink)", title: "Barkóba", desc: "Te gondolsz valamire, a többiek igen/nem kérdésekkel találják ki. Legfeljebb 20 kérdés." },
   { id: "amoba", ic: "✕", bg: "var(--accent)", title: "Amőba", desc: "Ketten játszotok egy 15×15-ös táblán, öt egy sorban nyer. A többiek nézik." },
-  { id: "hangman", ic: "A", bg: "var(--ok)", title: "Akasztófa", desc: "Te adod fel a szót, a többiek együtt tippelnek betűket. 10 hiba után vége." },
+  { id: "hangman", ic: "A", bg: "var(--ok)", title: "Akasztófa", desc: "Valaki feladja a szót, a többiek együtt tippelnek betűket. 10 hiba után vége.", opts: [["", "Én adom fel"], ["bot", "Gép adja fel"]], key: "bot" },
   { id: "four", ic: "●", bg: "#e2334f", title: "Négy a sorban", desc: "Ketten dobáltok korongot egy 7×6-os táblára. Négy egy sorban nyer." },
   { id: "battle", ic: "⚓", bg: "#0e9fb3", title: "Torpedó", desc: "Két kapitány, rejtett flották egy 8×8-as vízen. Aki talál, újra lőhet." },
   { id: "memory", ic: "▦", bg: "#d63384", title: "Memória", desc: "Párkereső sorban egymás után. Ha párt találsz, újra jössz.", opts: [[8, "8 pár"], [10, "10 pár"], [12, "12 pár"]], key: "pairs" },
@@ -120,9 +120,12 @@ function roomShell() {
       <div class="codebox"><div><div class="eyebrow">Szobakód</div><div class="code">${esc(S.code)}</div></div><button class="ghost" data-act="copy" id="copybtn">Link másolása</button></div>
       <div class="share"><input type="text" id="sharelink" readonly value="${esc(link)}" aria-label="Meghívó link"></div>
     </div>
-    <div class="card"><div class="row between" style="margin-bottom:4px"><h3>Bent vannak</h3><span class="pill" id="pcount"></span></div><div class="people" id="people"></div></div>
+    <div class="card"><div class="row between" style="margin-bottom:4px"><h3>Bent vannak</h3><span class="pill" id="pcount"></span></div><div class="people" id="people"></div>
+      <div class="stack" style="gap:8px;margin-top:10px;padding-top:12px;border-top:1px solid var(--line)"><div class="row between"><span style="font-weight:600">🤖 Gépi játékos hozzáadása</span></div>
+      <div class="seg" role="group" aria-label="Gép nehézsége"><button data-act="addbot" data-level="easy">Könnyű</button><button data-act="addbot" data-level="medium">Közepes</button><button data-act="addbot" data-level="hard">Nehéz</button></div>
+      <p class="small muted">Egyedül is játszhatsz: adj hozzá egy vagy több gépet. A Rajzolóst és a Barkóbát csak emberekkel lehet.</p></div></div>
     <div><h2 style="margin:6px 0 12px">Mit játsszunk?</h2>
-    <div class="picker">${CATALOG.map((c) => `<div class="gcard"><span class="ic" style="background:${c.bg};color:${c.fg || "#fff"}">${c.ic}</span><h3>${c.title}</h3><p>${c.desc}</p>
+    <div class="picker">${CATALOG.map((c) => `<div class="gcard"><div class="row between"><span class="ic" style="background:${c.bg};color:${c.fg || "#fff"}">${c.ic}</span><span class="pill" style="font-size:11.5px">${(S.st.botGames || []).includes(c.id) ? "🤖 géppel is" : "👥 csak emberekkel"}</span></div><h3>${c.title}</h3><p>${c.desc}</p>
       <div class="opts">${c.opts ? c.opts.map(([v, l]) => `<button data-act="start" data-game="${c.id}" data-k="${c.key}" data-v="${v}">${l}</button>`).join("") : `<button data-act="start" data-game="${c.id}">Indítás</button>`}</div></div>`).join("")}</div></div>
     <div class="card inline-chat"><h3 style="margin-bottom:8px">Csevegő</h3><div class="msgs" id="msgs"></div>
       <form class="chatin" data-form="chat"><input type="text" id="chatin" maxlength="300" placeholder="Írj valamit…" autocomplete="off" enterkeyhint="send"><button>Küld</button></form></div>
@@ -132,7 +135,7 @@ function paintRoom() {
   const st = S.st, ids = Object.keys(st.players).sort((a, b) => st.players[a].joined - st.players[b].joined);
   const on = ids.filter((p) => st.players[p].online).length;
   $("#pcount").textContent = on + " online";
-  const html = ids.map((p) => `<div class="person">${avatar(p)}<span class="nm">${esc(pname(p))}${p === S.pid ? ` <span class="muted small">(te)</span>` : ""}${p === st.host ? `<span class="tag">gazda</span>` : ""}</span><span class="dot ${st.players[p].online ? "on" : ""}" title="${st.players[p].online ? "online" : "nincs itt"}"></span></div>`).join("");
+  const html = ids.map((p) => `<div class="person">${avatar(p)}<span class="nm">${esc(pname(p))}${p === S.pid ? ` <span class="muted small">(te)</span>` : ""}${p === st.host ? `<span class="tag">gazda</span>` : ""}${st.players[p].bot ? `<span class="tag dup">${{ easy: "könnyű", medium: "közepes", hard: "nehéz" }[st.players[p].bot]}</span>` : ""}</span>${st.players[p].bot ? `<button class="link" data-act="rmbot" data-pid="${p}" aria-label="Gép eltávolítása">Kivesz</button>` : `<span class="dot ${st.players[p].online ? "on" : ""}" title="${st.players[p].online ? "online" : "nincs itt"}"></span>`}</div>`).join("");
   const el = $("#people"); if (el.innerHTML !== html) el.innerHTML = html;
 }
 
@@ -173,7 +176,10 @@ app.addEventListener("click", async (e) => {
     hello();
   } else if (a === "leave") { S.code = null; S.st = null; S.wantCode = null; setHash(""); S.ws?.close(); render(true); }
   else if (a === "copy") { const el = $("#sharelink"); try { await navigator.clipboard.writeText(el.value); b.textContent = "Kimásolva ✓"; } catch { el.select(); b.textContent = "Jelöld ki és másold"; } setTimeout(() => (b.textContent = "Link másolása"), 2500); }
-  else if (a === "start") { const opts = {}; if (b.dataset.k) opts[b.dataset.k] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v; send({ t: "start", game: b.dataset.game, opts }); }
+  else if (a === "start") { const opts = {}; if (b.dataset.k === "bot") { if (b.dataset.v) opts.bot = true; } else if (b.dataset.k) opts[b.dataset.k] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v; send({ t: "start", game: b.dataset.game, opts }); }
+  else if (a === "addbot") send({ t: "addbot", level: b.dataset.level });
+  else if (a === "rmbot") send({ t: "rmbot", pid: b.dataset.pid });
+  else if (a === "botsit") send({ t: "botsit", seat: +b.dataset.seat });
   else if (a === "end") send({ t: "end" });
   else if (a === "chat") { S.chatOpen = !S.chatOpen; $("#sheet").hidden = !S.chatOpen; paintChat(); if (S.chatOpen) { const m = $("#msgs"); m.scrollTop = m.scrollHeight; $("#chatin")?.focus(); } }
 });

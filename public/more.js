@@ -103,7 +103,7 @@ export const four = {
   },
   paint(el, v) {
     const col = { 1: "#e2334f", 2: "#ffd23f" };
-    const seat = (k) => { const p = v.seats[k]; return `<div class="seat ${!v.winner && v.turn === k && v.seats[1] && v.seats[2] ? "turn" : ""}"><span style="width:26px;height:26px;border-radius:50%;background:${col[k]};flex:0 0 auto"></span>${p ? `${avatar(p, true)}<span style="flex:1;font-weight:600">${esc(pname(p))}${v.wins[p] ? ` <span class="muted small">${v.wins[p]} győzelem</span>` : ""}</span>${p === S.pid ? `<button class="link" data-fs="leave">Feláll</button>` : ""}` : `<button data-fs="sit" data-seat="${k}" style="flex:1">Leülök ide</button>`}</div>`; };
+    const seat = (k) => { const p = v.seats[k]; return `<div class="seat ${!v.winner && v.turn === k && v.seats[1] && v.seats[2] ? "turn" : ""}"><span style="width:26px;height:26px;border-radius:50%;background:${col[k]};flex:0 0 auto"></span>${p ? `${avatar(p, true)}<span style="flex:1;font-weight:600">${esc(pname(p))}${v.wins[p] ? ` <span class="muted small">${v.wins[p]} győzelem</span>` : ""}</span>${p === S.pid ? `<button class="link" data-fs="leave">Feláll</button>` : ""}` : `<button data-fs="sit" data-seat="${k}" style="flex:1">Leülök</button><button class="ghost" data-act="botsit" data-seat="${k}">🤖 Gép</button>`}</div>`; };
     setHTML($("#fseats", el), seat(1) + seat(2));
     setHTML($("#fstat", el), !v.seats[1] || !v.seats[2] ? `<div class="notice"><div class="body">Kell két játékos: üljetek le a pirosnál és a sárgánál.</div></div>` : v.winner === 3 ? `<div class="notice"><div class="body">Döntetlen.</div></div>` : v.winner ? `<div class="notice ok"><div class="body"><b>${esc(pname(v.seats[v.winner]))}</b> nyert! Négy egy sorban.</div></div>` : `<div class="notice"><div class="body">${v.seats[v.turn] === S.pid ? "<b>Te jössz!</b> Koppints egy oszlopra." : esc(pname(v.seats[v.turn])) + " jön."}</div></div>`);
     const win = new Set(v.line);
@@ -125,7 +125,7 @@ export const battle = {
   },
   paint(el, v) {
     const me = v.me, foe = me === 1 ? 2 : 1;
-    const seat = (k) => { const p = v.seats[k]; return `<div class="seat ${!v.winner && v.turn === k && v.ready[1] && v.ready[2] ? "turn" : ""}"><span class="sym">${k === 1 ? "⚓" : "🚢"}</span>${p ? `${avatar(p, true)}<span style="flex:1;font-weight:600">${esc(pname(p))}<br><span class="muted small">${v.ready[k] ? "kész" : "helyezkedik"} · ${v.left[k]} hajó</span></span>` : `<button data-bt="sit" data-seat="${k}" style="flex:1">Leülök</button>`}</div>`; };
+    const seat = (k) => { const p = v.seats[k]; return `<div class="seat ${!v.winner && v.turn === k && v.ready[1] && v.ready[2] ? "turn" : ""}"><span class="sym">${k === 1 ? "⚓" : "🚢"}</span>${p ? `${avatar(p, true)}<span style="flex:1;font-weight:600">${esc(pname(p))}<br><span class="muted small">${v.ready[k] ? "kész" : "helyezkedik"} · ${v.left[k]} hajó</span></span>` : `<button data-bt="sit" data-seat="${k}" style="flex:1">Leülök</button><button class="ghost" data-act="botsit" data-seat="${k}">🤖 Gép</button>`}</div>`; };
     setHTML($("#bseats", el), seat(1) + seat(2));
     const both = v.ready[1] && v.ready[2];
     setHTML($("#bstat2", el), v.winner ? `<div class="notice ok"><div class="body"><b>${esc(pname(v.seats[v.winner]))}</b> elsüllyesztette az összes hajót!</div></div>${me ? `<div class="row" style="justify-content:center"><button data-bt="again">Új csata</button></div>` : ""}`

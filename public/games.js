@@ -54,7 +54,7 @@ export const amoba = {
   },
   paint(el, v) {
     const sym = { 1: "✕", 2: "○" };
-    const seat = (k) => { const p = v.seats[k]; return `<div class="seat ${!v.winner && v.turn === k && v.seats[1] && v.seats[2] ? "turn" : ""}"><span class="sym" style="color:${k === 1 ? "var(--accent)" : "var(--info)"}">${sym[k]}</span>${p ? `${avatar(p, true)}<span class="nm" style="flex:1;font-weight:600">${esc(pname(p))}${v.wins[p] ? ` <span class="muted small">${v.wins[p]} győzelem</span>` : ""}</span>${p === S.pid ? `<button class="link" data-amoba="leave">Feláll</button>` : ""}` : `<button data-amoba="sit" data-seat="${k}" style="flex:1">Leülök ide</button>`}</div>`; };
+    const seat = (k) => { const p = v.seats[k]; return `<div class="seat ${!v.winner && v.turn === k && v.seats[1] && v.seats[2] ? "turn" : ""}"><span class="sym" style="color:${k === 1 ? "var(--accent)" : "var(--info)"}">${sym[k]}</span>${p ? `${avatar(p, true)}<span class="nm" style="flex:1;font-weight:600">${esc(pname(p))}${v.wins[p] ? ` <span class="muted small">${v.wins[p]} győzelem</span>` : ""}</span>${p === S.pid ? `<button class="link" data-amoba="leave">Feláll</button>` : ""}` : `<button data-amoba="sit" data-seat="${k}" style="flex:1">Leülök</button><button class="ghost" data-act="botsit" data-seat="${k}">🤖 Gép</button>`}</div>`; };
     setHTML($("#aseats", el), seat(1) + seat(2));
     let st;
     if (!v.seats[1] || !v.seats[2]) st = `<div class="notice"><div class="body">Kell két játékos: üljetek le az X-hez és az O-hoz.</div></div>`;

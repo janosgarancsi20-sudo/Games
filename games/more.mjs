@@ -8,7 +8,10 @@ const err = (m) => { throw new Error(m); };
 const clean = (s, max) => String(s ?? "").replace(/[\u0000-\u001f]/g, "").trim().slice(0, max);
 const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const online = (room) => [...room.socks.keys()].filter((p) => room.players[p]);
+// Jelenlét: online ember vagy gépi játékos. A rajzolóst csak emberek játsszák.
+export const isIn = (room, p) => !!room.players[p] && (room.socks.has(p) || !!room.players[p].bot);
+const online = (room) => Object.keys(room.players).filter((p) => isIn(room, p));
+const humans = (room) => [...room.socks.keys()].filter((p) => room.players[p]);
 const add = (o, k, v) => (o[k] = (o[k] || 0) + v);
 
 // ================= Rajzolós találgatós =================
@@ -16,7 +19,7 @@ const DRAW_TIME = 80000;
 const draw = {
   id: "draw", name: "Rajzolós", min: 2,
   create(room, opts) {
-    const order = shuffle(online(room));
+    const order = shuffle(humans(room));
     const s = { order, turn: -1, laps: Math.max(1, Math.min(3, opts.laps | 0 || 1)), scores: {}, phase: "pick", drawer: null, choices: [], word: "", strokes: [], guessed: {}, feed: [], endsAt: 0, used: [], hintAt: 0, last: null, done: false };
     nextTurn(s); return s;
   },
@@ -219,7 +222,7 @@ const memory = {
     let ch = false;
     if (s.hideAt && now > s.hideAt) { s.open = []; s.hideAt = 0; s.t++; ch = true; }
     // ha a soron lévő játékos elment, lépjünk tovább
-    if (!s.done && s.order.length && !room.socks.has(s.order[s.t % s.order.length])) { const on = s.order.filter((p) => room.socks.has(p)); if (on.length) { s.t++; ch = true; } }
+    if (!s.done && s.order.length && !isIn(room, s.order[s.t % s.order.length])) { const on = s.order.filter((p) => isIn(room, p)); if (on.length) { s.t++; ch = true; } }
     return ch;
   },
   over: (s) => s.done,
@@ -264,11 +267,11 @@ const dice = {
       s.sheets[pid][k] = yScore(k, s.d);
       s.rolls = 0; s.hold = [false, false, false, false, false];
       // következő játékos, aki még online és van üres sora
-      for (let n = 0; n < s.order.length; n++) { s.t++; const p = s.order[s.t % s.order.length]; if (room.socks.has(p) && Object.keys(s.sheets[p]).length < CATS.length) return; }
+      for (let n = 0; n < s.order.length; n++) { s.t++; const p = s.order[s.t % s.order.length]; if (isIn(room, p) && Object.keys(s.sheets[p]).length < CATS.length) return; }
       s.done = true;
     }
   },
-  tick(s, now, room) { if (s.done || !s.order.length) return false; const cur = s.order[s.t % s.order.length]; if (!room.socks.has(cur) && s.order.some((p) => room.socks.has(p) && Object.keys(s.sheets[p]).length < CATS.length)) { s.t++; s.rolls = 0; s.hold = [false, false, false, false, false]; return true; } return false; },
+  tick(s, now, room) { if (s.done || !s.order.length) return false; const cur = s.order[s.t % s.order.length]; if (!isIn(room, cur) && s.order.some((p) => isIn(room, p) && Object.keys(s.sheets[p]).length < CATS.length)) { s.t++; s.rolls = 0; s.hold = [false, false, false, false, false]; return true; } return false; },
   over: (s) => s.done,
   view(s) {
     const cur = s.order[s.t % s.order.length];
@@ -320,4 +323,5 @@ const react = {
   view(s) { return { round: s.round, total: s.total, phase: s.phase, times: s.times, best: s.best, sum: s.sum, falses: s.falses, history: s.history }; },
 };
 
+export { DRAW_WORDS };
 export const MORE = { draw, orszag, quiz, four, battle, memory, dice, rps, react };

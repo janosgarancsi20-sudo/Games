@@ -323,3 +323,6 @@ details[open] summary::after{content:"–"}
 .race .r .bar i{display:block;height:100%;background:var(--ok)}
 
 .chatfab .badge[hidden]{display:none}
+.seat{flex-wrap:wrap;min-width:0}
+.seat button{padding:9px 12px;font-size:14px}
+@media (max-width:520px){.seats{grid-template-columns:1fr}}
